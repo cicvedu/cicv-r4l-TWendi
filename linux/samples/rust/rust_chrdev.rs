@@ -3,7 +3,7 @@
 //! Rust character device sample.
 
 use core::result::Result::Err;
-
+use core::cmp::min;      
 use kernel::prelude::*;
 use kernel::sync::Mutex;
 use kernel::{chrdev, file};
@@ -39,13 +39,30 @@ impl file::Operations for RustFile {
         )
     }
 
-    fn write(_this: &Self,_file: &file::File,_reader: &mut impl kernel::io_buffer::IoBufferReader,_offset:u64,) -> Result<usize> {
-        Err(EPERM)
+    fn write(
+        this: &Self,
+        _file: &file::File,
+        reader: &mut impl kernel::io_buffer::IoBufferReader,
+        offset: u64,
+    ) -> Result<usize> {
+        let mut buf = this.inner.lock();
+        let ava_write_size = min(GLOBALMEM_SIZE - offset as usize, reader.len());
+        reader.read_slice(&mut buf[offset as usize..offset as usize + ava_write_size])?;
+        Ok(ava_write_size)
     }
 
-    fn read(_this: &Self,_file: &file::File,_writer: &mut impl kernel::io_buffer::IoBufferWriter,_offset:u64,) -> Result<usize> {
-        Err(EPERM)
+    fn read(
+        this: &Self,
+        _file: &file::File,
+        writer: &mut impl kernel::io_buffer::IoBufferWriter,
+        offset: u64,
+    ) -> Result<usize> {
+        let buf = this.inner.lock();
+        let ava_read_size = min(GLOBALMEM_SIZE - offset as usize, writer.len());
+        writer.write_slice(&buf[offset as usize..offset as usize + ava_read_size])?;
+        Ok(ava_read_size)
     }
+    
 }
 
 struct RustChrdev {

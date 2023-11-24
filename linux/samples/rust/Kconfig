@@ -163,4 +163,11 @@ config SAMPLE_RUST_SELFTESTS
 
 	  If unsure, say N.
 
+config RUST_HELLOWORLD
+	tristate "hello world module in rust"
+	help
+	  This option builds Hello World from Rust module.
+
+	  If unsure, say N.
+
 endif # SAMPLES_RUST
